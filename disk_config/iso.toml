@@ -1,0 +1,4 @@
+[[customizations.user]]
+name = "utente"
+password = "password"
+groups = ["wheel"]
