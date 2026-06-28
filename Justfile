@@ -1,22 +1,23 @@
 set dotenv-filename := "image-template.env"
 set dotenv-load
 
-export image_name      := env_var("IMAGE_NAME")
+export image_name := env_var("IMAGE_NAME")
 export repo_organization := env_var("REPO_ORGANIZATION")
-export image_desc      := env_var("IMAGE_DESC")
-export image_keywords  := env_var("IMAGE_KEYWORDS")
-export image_logo_url  := env_var("IMAGE_LOGO_URL")
-export default_tag     := env_var("DEFAULT_TAG")
-export bib_image       := env_var("BIB_IMAGE")
+export image_desc := env_var("IMAGE_DESC")
+export image_keywords := env_var("IMAGE_KEYWORDS")
+export image_logo_url := env_var("IMAGE_LOGO_URL")
+export default_tag := env_var("DEFAULT_TAG")
+export bib_image := env_var("BIB_IMAGE")
 
-alias build-vm    := build-qcow2
-alias rebuild-vm  := rebuild-qcow2
-alias run-vm      := run-vm-qcow2
+alias build-vm := build-qcow2
+alias rebuild-vm := rebuild-qcow2
+alias run-vm := run-vm-qcow2
 
 [private]
 default:
     @just --list
 
+# Check Just Syntax
 [group('Just')]
 check:
     #!/usr/bin/bash
@@ -27,6 +28,7 @@ check:
     echo "Checking syntax: Justfile"
     just --unstable --fmt --check -f Justfile
 
+# Fix Just Syntax
 [group('Just')]
 fix:
     #!/usr/bin/bash
@@ -37,6 +39,7 @@ fix:
     echo "Checking syntax: Justfile"
     just --unstable --fmt -f Justfile || { exit 1; }
 
+# Clean Repo
 [group('Utility')]
 clean:
     #!/usr/bin/bash
@@ -70,6 +73,7 @@ sudoif command *args:
     }
     sudoif {{ command }} {{ args }}
 
+# Build the image
 build $target_image=image_name $tag=default_tag:
     #!/usr/bin/env bash
     set -euox pipefail
@@ -95,47 +99,51 @@ build $target_image=image_name $tag=default_tag:
     PODMAN_BUILD_ARGS=("${BUILD_ARGS[@]}" "${LABELS[@]}" --pull=newer --tag "${target_image}:${tag}" --file Containerfile)
     podman build "${PODMAN_BUILD_ARGS[@]}" .
 
+# Rechunk with chunkah
 rechunk $target_image=image_name $tag=default_tag:
     #!/usr/bin/env bash
     set -xeuo pipefail
     export CHUNKAH_CONFIG_STR=$(podman inspect "${target_image}")
     podman run --rm --mount=type=image,src="${target_image}",target=/chunkah \
-    -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah:latest \
-    build \
-    --verbose \
-    --compressed \
-    --max-layers 128 \
-    --prune /sysroot/ \
-    --label ostree.commit- --label ostree.final-diffid- \
-    --tag "${target_image}:${tag}" | podman load
+        -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah:latest \
+        build \
+        --verbose \
+        --compressed \
+        --max-layers 128 \
+        --prune /sysroot/ \
+        --label ostree.commit- --label ostree.final-diffid- \
+        --tag "${target_image}:${tag}" | podman load
 
+# Rechunk with rpm-ostree
 ostree-rechunk $target_image=image_name $tag=default_tag:
     #!/usr/bin/env bash
     set -xeuo pipefail
     if [[ ! "${UID}" -eq "0" ]]; then
-      echo "This needs to run as root."
-      exit 1
+        echo "This needs to run as root."
+        exit 1
     fi
     RPM_OSTREE_CHUNKER_IMAGE="quay.io/fedora/fedora-bootc:latest"
     podman run --rm \
-      --pull=newer \
-      --privileged \
-      -v "/var/lib/containers:/var/lib/containers" \
-      --entrypoint /usr/bin/rpm-ostree \
-      "${RPM_OSTREE_CHUNKER_IMAGE}" \
-      compose build-chunked-oci \
-      --max-layers 127 \
-      --format-version=2 \
-      --bootc \
-      --from "localhost/${target_image}:${tag}" \
-      --output containers-storage:"localhost/${target_image}:${tag}"
+        --pull=newer \
+        --privileged \
+        -v "/var/lib/containers:/var/lib/containers" \
+        --entrypoint /usr/bin/rpm-ostree \
+        "${RPM_OSTREE_CHUNKER_IMAGE}" \
+        compose build-chunked-oci \
+        --max-layers 127 \
+        --format-version=2 \
+        --bootc \
+        --from "localhost/${target_image}:${tag}" \
+        --output containers-storage:"localhost/${target_image}:${tag}"
 
+# Generate Default Tag
 [group('Utility')]
 generate-default-tag $tag=default_tag:
     #!/usr/bin/env bash
     set -eoux pipefail
     echo "${tag}"
 
+# Generate Tags
 [group('Utility')]
 generate-build-tags $target_image=image_name $tag=default_tag:
     #!/usr/bin/bash
@@ -153,17 +161,19 @@ generate-build-tags $target_image=image_name $tag=default_tag:
     BUILD_TAGS+=("${tag}-${DATE}")
     echo "${BUILD_TAGS[@]}"
 
+# Tag Images
 [group('Utility')]
 tag-images $target_image=image_name $tag=default_tag tags="":
     #!/usr/bin/env bash
     set -eoux pipefail
-    IMAGE=$(podman inspect ${target_image}:${tag} | jq -r .[].Id)
+    IMAGE=$(podman inspect ${target_image}:${tag} | jq -r '.[].Id')
     podman untag ${IMAGE}
     for tag in {{ tags }}; do
         podman tag $IMAGE "${target_image}:${tag}"
     done
     podman images
 
+# Image Name
 [group('Utility')]
 [private]
 image_name $target_image=image_name:
@@ -171,6 +181,7 @@ image_name $target_image=image_name:
     set -eoux pipefail
     echo "${image_name}"
 
+[private]
 _rootful_load_image $target_image=image_name $tag=default_tag:
     #!/usr/bin/bash
     set -eoux pipefail
@@ -182,9 +193,9 @@ _rootful_load_image $target_image=image_name $tag=default_tag:
     resolved_tag=$(podman inspect -t image "${target_image}:${tag}" | jq -r '.[].RepoTags.[0]')
     return_code=$?
     set -e
-    USER_IMG_ID=$(podman images --filter reference="${target_image}:${tag}" --format "{{{{.ID}}}}")
+    USER_IMG_ID=$(podman images --filter reference="${target_image}:${tag}" --format '{{.ID}}')
     if [[ $return_code -eq 0 ]]; then
-        ID=$(just sudoif podman images --filter reference="${target_image}:${tag}" --format "{{{{.ID}}}}")
+        ID=$(just sudoif podman images --filter reference="${target_image}:${tag}" --format '{{.ID}}')
         if [[ "$ID" != "$USER_IMG_ID" ]]; then
             COPYTMP=$(mktemp -p "${PWD}" -d -t _build_podman_scp.XXXXXXXXXX)
             just sudoif TMPDIR=${COPYTMP} podman image scp ${UID}@localhost::"${target_image}:${tag}" root@localhost::"${target_image}:${tag}"
@@ -194,6 +205,7 @@ _rootful_load_image $target_image=image_name $tag=default_tag:
         just sudoif podman pull "${target_image}:${tag}"
     fi
 
+[private]
 _build-bib $target_image $tag $type $config: (_rootful_load_image target_image tag)
     #!/usr/bin/env bash
     set -euo pipefail
@@ -202,43 +214,51 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     args+="--rootfs=btrfs"
     BUILDTMP=$(mktemp -p "${PWD}" -d -t _build-bib.XXXXXXXXXX)
     sudo podman run \
-      --rm \
-      -it \
-      --privileged \
-      --pull=newer \
-      --net=host \
-      --security-opt label=type:unconfined_t \
-      -v $(pwd)/${config}:/config.toml:ro \
-      -v $BUILDTMP:/output \
-      -v /var/lib/containers/storage:/var/lib/containers/storage \
-      "${bib_image}" \
-      ${args} \
-      "${target_image}:${tag}"
+        --rm \
+        -it \
+        --privileged \
+        --pull=newer \
+        --net=host \
+        --security-opt label=type:unconfined_t \
+        -v $(pwd)/${config}:/config.toml:ro \
+        -v $BUILDTMP:/output \
+        -v /var/lib/containers/storage:/var/lib/containers/storage \
+        "${bib_image}" \
+        ${args} \
+        "${target_image}:${tag}"
     mkdir -p output
     sudo mv -f $BUILDTMP/* output/
     sudo rmdir $BUILDTMP
     sudo chown -R $USER:$USER output/
 
+[private]
 _rebuild-bib $target_image $tag $type $config: (build target_image tag) && (_build-bib target_image tag type config)
 
+# Build a QCOW2 virtual machine image
 [group('Build Virtal Machine Image')]
 build-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "qcow2" "disk_config/disk.toml")
 
+# Build a RAW virtual machine image
 [group('Build Virtal Machine Image')]
 build-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "raw" "disk_config/disk.toml")
 
+# Build an ISO virtual machine image
 [group('Build Virtal Machine Image')]
 build-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "iso" "disk_config/iso.toml")
 
+# Rebuild a QCOW2 virtual machine image
 [group('Build Virtal Machine Image')]
 rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "qcow2" "disk_config/disk.toml")
 
+# Rebuild a RAW virtual machine image
 [group('Build Virtal Machine Image')]
 rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "disk_config/disk.toml")
 
+# Rebuild an ISO virtual machine image
 [group('Build Virtal Machine Image')]
 rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "iso" "disk_config/iso.toml")
 
+[private]
 _run-vm $target_image $tag $type $config:
     #!/usr/bin/bash
     set -eoux pipefail
@@ -270,29 +290,34 @@ _run-vm $target_image $tag $type $config:
     (sleep 30 && xdg-open http://localhost:"$port") &
     podman run "${run_args[@]}"
 
+# Run a virtual machine from a QCOW2 image
 [group('Run Virtal Machine')]
 run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "qcow2" "disk_config/disk.toml")
 
+# Run a virtual machine from a RAW image
 [group('Run Virtal Machine')]
 run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "disk_config/disk.toml")
 
+# Run a virtual machine from an ISO
 [group('Run Virtal Machine')]
 run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "disk_config/iso.toml")
 
+# Run a virtual machine using systemd-vmspawn
 [group('Run Virtal Machine')]
 spawn-vm rebuild="0" type="qcow2" ram="6G":
     #!/usr/bin/env bash
     set -euo pipefail
     [ "{{ rebuild }}" -eq 1 ] && echo "Rebuilding the ISO" && just build-vm {{ rebuild }} {{ type }}
     systemd-vmspawn \
-      -M "bootc-image" \
-      --console=gui \
-      --cpus=2 \
-      --ram=$(echo {{ ram }}| /usr/bin/numfmt --from=iec) \
-      --network-user-mode \
-      --vsock=false --pass-ssh-key=false \
-      -i ./output/**/*.{{ type }}
+        -M "bootc-image" \
+        --console=gui \
+        --cpus=2 \
+        --ram=$(echo {{ ram }}| /usr/bin/numfmt --from=iec) \
+        --network-user-mode \
+        --vsock=false --pass-ssh-key=false \
+        -i ./output/**/*.{{ type }}
 
+# Runs shell check on all Bash scripts
 lint:
     #!/usr/bin/env bash
     set -eoux pipefail
@@ -302,6 +327,7 @@ lint:
     fi
     /usr/bin/find . -iname "*.sh" -type f -exec shellcheck "{}" ';'
 
+# Runs shfmt on all Bash scripts
 format:
     #!/usr/bin/env bash
     set -eoux pipefail
