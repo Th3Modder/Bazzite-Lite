@@ -1,15 +1,3 @@
-[customizations]
-installation_device = "/dev/vda"
-
-[customizations.disk]
-partitioning = "lvm"
-
-[[customizations.disk.partitions]]
-mountpoint = "/"
-label = "root"
-fs_type = "xfs"
-size = "10 GiB"
-
 [[customizations.user]]
 name = "utente"
 password = "password"
