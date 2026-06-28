@@ -193,9 +193,9 @@ _rootful_load_image $target_image=image_name $tag=default_tag:
     resolved_tag=$(podman inspect -t image "${target_image}:${tag}" | jq -r '.[].RepoTags.[0]')
     return_code=$?
     set -e
-    USER_IMG_ID=$(podman images --filter reference="${target_image}:${tag}" --format "{{.ID}}")
+        USER_IMG_ID=$(podman images --filter reference="${target_image}:${tag}" --format "{{{{.ID}}}}")
     if [[ $return_code -eq 0 ]]; then
-        ID=$(just sudoif podman images --filter reference="${target_image}:${tag}" --format '{{.ID}}')
+        ID=$(just sudoif podman images --filter reference="${target_image}:${tag}" --format "{{{{.ID}}}}")
         if [[ "$ID" != "$USER_IMG_ID" ]]; then
             COPYTMP=$(mktemp -p "${PWD}" -d -t _build_podman_scp.XXXXXXXXXX)
             just sudoif TMPDIR=${COPYTMP} podman image scp ${UID}@localhost::"${target_image}:${tag}" root@localhost::"${target_image}:${tag}"
