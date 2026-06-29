@@ -2,3 +2,10 @@
 name = "utente"
 password = "password"
 groups = ["wheel"]
+
+[customizations.installer]
+modules.enable = ["anaconda-webui"]
+
+[[customizations.repositories]]
+id = "terra-mesa"
+enabled = false
