@@ -1,6 +1,22 @@
-# image-template
+# Bazzite-Lite
 
-This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.
+**A lightweight, customizable Bazzite distribution optimized for KDE and GNOME desktops across all PC hardware.**
+
+Built on [bootc](https://github.com/bootc-dev/bootc) technology for efficient container-based OS management, Bazzite-Lite includes streamlined tools for creating disk images (ISO, QCOW2, RAW) and automated publishing to container registries. Perfect for users seeking minimal footprint without sacrificing functionality.
+
+---
+
+## Features
+
+- 🎯 **Lightweight Design** - Optimized for universal PC compatibility
+- 🖥️ **Desktop Flexibility** - Pre-configured for KDE and GNOME environments
+- 📦 **Container-Native** - Full bootc support with automated CI/CD image building
+- 💿 **Multiple Installation Methods** - Generate ISO, QCOW2, and RAW disk images
+- 🔒 **Secure by Default** - Integrated cosign container signing
+- ☁️ **Cloud Ready** - Optional S3 upload for disk images
+- 🛠️ **Just Recipes** - Simple command-line tools for building and testing
+
+---
 
 # Community
 
@@ -98,7 +114,7 @@ If you don't know which image to pick, choosing the one your system is currently
 ```bash
 sudo bootc status
 ```
-This will show you all the info you need to know about your current image. The image you are currently on is displayed after `Booted image:`. Paste that information after the `FROM` statement in the Containerfile to set it as your base image.
+This will show you all the info you need to know about your current image. The image you are currently on is displayed after `Booted image:`. Paste that information after the `FROM` statement in the Containerfile.
 
 ### Step 2c: Changing Names
 
@@ -118,35 +134,35 @@ From your bootc system, run the following command substituting in your Github us
 ```bash
 sudo bootc switch ghcr.io/<username>/<image_name>
 ```
-This should queue your image for the next reboot, which you can do immediately after the command finishes. You have officially set up your custom image! See the following section for an explanation of the important parts of the template for customization.
+This should queue your image for the next reboot, which you can do immediately after the command finishes. You have officially set up your custom image! See the following section for an explanation of what you can do next.
 
 # Repository Contents
 
 ## Containerfile
 
-The [Containerfile](./Containerfile) defines the operations used to customize the selected image.This file is the entrypoint for your image build, and works exactly like a regular podman Containerfile. For reference, please see the [Podman Documentation](https://docs.podman.io/en/latest/Introduction.html).
+The [Containerfile](./Containerfile) defines the operations used to customize the selected image. This file is the entrypoint for your image build, and works exactly like a regular podman Containerfile.
 
 ## build.sh
 
-The [build.sh](./build_files/build.sh) file is called from your Containerfile. It is the best place to install new packages or make any other customization to your system. There are customization examples contained within it for your perusal.
+The [build.sh](./build_files/build.sh) file is called from your Containerfile. It is the best place to install new packages or make any other customization to your system. There are customization examples in the file for reference.
 
 ## build.yml
 
-The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates your custom OCI image and publishes it to the Github Container Registry (GHCR). By default, the image name will match the Github repository name.
+The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates your custom OCI image and publishes it to the Github Container Registry (GHCR). By default, the image name will match the repository name.
 
 # Building Disk Images
 
 This template provides an out of the box workflow for creating disk images (ISO, qcow, raw) for your custom OCI image which can be used to directly install onto your machines.
 
-This template provides a way to upload the disk images that is generated from the workflow to a S3 bucket. The disk images will also be available as an artifact from the job, if you wish to use an alternate provider. To upload to S3 we use [rclone](https://rclone.org/) which is able to use [many S3 providers](https://rclone.org/s3/).
+This template provides a way to upload the disk images that is generated from the workflow to a S3 bucket. The disk images will also be available as an artifact from the job, if you wish to use an alternative method for hosting.
 
 ## Setting Up ISO Builds
 
-The [build-disk.yml](./.github/workflows/build-disk.yml) Github Actions workflow creates a disk image from your OCI image by utilizing the [bootc-image-builder](https://osbuild.org/docs/bootc/). In order to use this workflow you must complete the following steps:
+The [build-disk.yml](./.github/workflows/build-disk.yml) Github Actions workflow creates a disk image from your OCI image by utilizing the [bootc-image-builder](https://osbuild.org/docs/bootc/). In order to use this workflow, follow these steps:
 
 1. Modify `disk_config/iso.toml` to point to your custom container image before generating an ISO image.
-2. If you changed your image name from the default in `build.yml` then in the `build-disk.yml` file edit the `IMAGE_REGISTRY`, `IMAGE_NAME` and `DEFAULT_TAG` environment variables with the correct values. If you did not make changes, skip this step.
-3. Finally, if you want to upload your disk images to S3 then you will need to add your S3 configuration to the repository's Action secrets. This can be found by going to your repository settings, under `Secrets and Variables` -> `Actions`. You will need to add the following
+2. If you changed your image name from the default in `build.yml` then in the `build-disk.yml` file edit the `IMAGE_REGISTRY`, `IMAGE_NAME` and `DEFAULT_TAG` environment variables with the correct values.
+3. Finally, if you want to upload your disk images to S3 then you will need to add your S3 configuration to the repository's Action secrets. This can be found by going to your repository settings, under `Secrets and Variables` -> `Actions`. Add the following secrets with the values from your S3 provider:
   - `S3_PROVIDER` - Must match one of the values from the [supported list](https://rclone.org/s3/)
   - `S3_BUCKET_NAME` - Your unique bucket name
   - `S3_ACCESS_KEY_ID` - It is recommended that you make a separate key just for this workflow
@@ -158,7 +174,7 @@ Once the workflow is done, you'll find the disk images either in your S3 bucket 
 
 # Artifacthub
 
-This template comes with the necessary tooling to index your image on [artifacthub.io](https://artifacthub.io). Use the `artifacthub-repo.yml` file at the root to verify yourself as the publisher. This is important to you for a few reasons:
+This template comes with the necessary tooling to index your image on [artifacthub.io](https://artifacthub.io). Use the `artifacthub-repo.yml` file at the root to verify yourself as the publisher. This is optional but encouraged as it allows the community to discover your image. Here's the benefits of hosting on ArtifactHub:
 
 - The value of artifacthub is it's one place for people to index their custom images, and since we depend on each other to learn, it helps grow the community. 
 - You get to see your pet project listed with the other cool projects in Cloud Native.
@@ -293,7 +309,7 @@ Runs shfmt on all Bash scripts.
 
 ## Additional resources
 
-For additional driver support, ublue maintains a set of scripts and container images available at [ublue-akmod](https://github.com/ublue-os/akmods). These images include the necessary scripts to install multiple kernel drivers within the container (Nvidia, OpenRazer, Framework...). The documentation provides guidance on how to properly integrate these drivers into your container image.
+For additional driver support, ublue maintains a set of scripts and container images available at [ublue-akmod](https://github.com/ublue-os/akmods). These images include the necessary scripts to install kernel modules and firmware.
 
 ## Community Examples
 
