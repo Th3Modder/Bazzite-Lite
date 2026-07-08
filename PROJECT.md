@@ -3,14 +3,6 @@
 ## About
 Bazzite-Lite is a lightweight, customizable Bazzite distribution optimized for KDE and GNOME desktops across all PC hardware. Built on bootc technology for efficient container-based OS management.
 
-## What We Do
-- Create streamlined, minimal Bazzite variants for KDE and GNOME
-- Provide automated CI/CD image building via GitHub Actions
-- Generate multiple disk image formats (ISO, QCOW2, RAW)
-- Support container registry publishing (GHCR)
-- Enable S3 uploads for disk images
-- Include enterprise-grade container signing (cosign)
-
 ## Key Features
 ✨ **Lightweight Design** - Optimized for universal PC compatibility
 🖥️ **Desktop Flexibility** - KDE and GNOME pre-configured
