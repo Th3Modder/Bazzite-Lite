@@ -1,5 +1,3 @@
-# Bazzite-Lite
-
 ![Bazzite-Lite](https://cdn.phototourl.com/free/2026-07-08-e5bf2e36-56b7-49a2-8a54-e74c7db3fbc4.png)
 
 **A lightweight, customizable Bazzite distribution optimized for KDE and GNOME desktops across all PC hardware.**
