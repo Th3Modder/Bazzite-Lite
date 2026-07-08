@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Bazzite-Lite" width="700"/>
+  <img src="https://raw.githubusercontent.com/Th3Modder/Bazzite-Lite/main/assets/logo.png" alt="Bazzite-Lite" width="700"/>
   <br/>
   <strong>Bazzite-Lite</strong>
 </p>
